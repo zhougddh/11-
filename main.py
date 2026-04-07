@@ -575,10 +575,9 @@ def set_api302_api_key():
 # 使用302.AI进行语音合成
 @app.route('/api302/tts', methods=['POST'])
 def api302_tts():
-    if len(PKC_MY) > 0:
-        my = request.args.get('my')
-        if my != PKC_MY:
-            return "密钥错误！"
+    # 验证用户登录状态
+    if 'username' not in session:
+        return jsonify({'error': '请先登录'}), 401
     
     data = request.get_json()
     if not data:
@@ -612,10 +611,9 @@ def api302_tts():
 # Fish Audio 语音合成路由（使用302.AI）
 @app.route('/fish/tts', methods=['POST'])
 def fish_tts():
-    if len(PKC_MY) > 0:
-        my = request.args.get('my')
-        if my != PKC_MY:
-            return "密钥错误！"
+    # 验证用户登录状态
+    if 'username' not in session:
+        return jsonify({'error': '请先登录'}), 401
     
     data = request.get_json()
     if not data:
