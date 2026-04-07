@@ -6,6 +6,7 @@
   "response_format": "url",
   "format": "mp3",
   "mp3_bitrate": 64,
+  "opus_bitrate": 32,
   "latency": "normal",
   "normalize": true,
   "chunk_length": 200

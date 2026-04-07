@@ -14,6 +14,7 @@ class API302:
         self.response_format = self.config.get('response_format', 'url')
         self.format = self.config.get('format', 'mp3')
         self.mp3_bitrate = self.config.get('mp3_bitrate', 64)
+        self.opus_bitrate = self.config.get('opus_bitrate', 32)
         self.latency = self.config.get('latency', 'normal')
         self.normalize = self.config.get('normalize', True)
         self.chunk_length = self.config.get('chunk_length', 200)
@@ -58,6 +59,7 @@ class API302:
                 'response_format': self.response_format,
                 'format': self.format,
                 'mp3_bitrate': self.mp3_bitrate,
+                'opus_bitrate': self.opus_bitrate,
                 'latency': self.latency,
                 'normalize': self.normalize,
                 'chunk_length': self.chunk_length

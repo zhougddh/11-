@@ -451,6 +451,7 @@ def dashboard():
                          categories=categories, 
                          selected_category=selected_category, 
                          selected_category_voices=selected_category_voices, 
+                         data=data, 
                          response=response, 
                          curtabName=curtabName)
 
