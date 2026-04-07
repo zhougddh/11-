@@ -17808,5 +17808,21 @@
                 "img": ""
             }
         ]
+    },
+    "302": {
+        "token": "YES",
+        "sort": "5",
+        "desc": "",
+        "url": "https://api.302.cn/v1",
+        "alias": "302语音",
+        "type": "custom",
+        "list": [
+            {
+                "name": "台湾机车",
+                "desc": "",
+                "vid": "c4f09481bf514fd2a864977042119f07",
+                "img": ""
+            }
+        ]
     }
 }
