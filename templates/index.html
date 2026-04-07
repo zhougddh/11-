@@ -394,14 +394,21 @@
                         <h3>语音合成</h3>
                         <form id="ttsForm">
                             <div class="form-group">
+                                <label for="ttsCategory">选择分类</label>
+                                <select class="form-control" id="ttsCategory" onchange="loadVoicesByCategory()" required>
+                                    {% for category_name in categories %}
+                                        <option value="{{ category_name }}">{{ category_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label for="ttsText">文本内容</label>
                                 <textarea class="form-control" id="ttsText" rows="3" required></textarea>
                             </div>
                             <div class="form-group">
                                 <label for="ttsVoice">选择音色</label>
                                 <select class="form-control" id="ttsVoice" required>
-                                    <option value="c4f09481bf514fd2a864977042119f07">台湾机车妹</option>
-                                    <option value="4066d617322e41abb30ed70eaeaf273f">麦当劳</option>
+                                    <option value="">请先选择分类</option>
                                 </select>
                             </div>
                             <button type="button" class="btn btn-primary" onclick="synthesizeSpeech()">合成语音</button>
@@ -419,6 +426,24 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // 音色数据
+        const voiceData = {
+            {% for category_name in categories %}
+                "{{ category_name }}": {
+                    "type": "{{ data[category_name].get('type', 'custom') }}",
+                    "voices": [
+                        {% for item in data[category_name].get('list', []) %}
+                            {
+                                "name": "{{ item.name }}",
+                                "vid": "{{ item.vid }}",
+                                "desc": "{{ item.desc }}"
+                            }{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ]
+                }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        };
+        
         // 初始化标签页
         document.addEventListener('DOMContentLoaded', function() {
             // 如果有指定的标签页，激活它
@@ -442,21 +467,64 @@
                     }
                 });
             });
+            
+            // 初始化音色列表
+            loadVoicesByCategory();
         });
+        
+        // 根据分类加载音色列表
+        function loadVoicesByCategory() {
+            const category = document.getElementById('ttsCategory').value;
+            const voiceSelect = document.getElementById('ttsVoice');
+            
+            // 清空当前选项
+            voiceSelect.innerHTML = '';
+            
+            if (category && voiceData[category]) {
+                const voices = voiceData[category].voices;
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.vid;
+                    option.textContent = voice.name + ' - ' + voice.desc;
+                    voiceSelect.appendChild(option);
+                });
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '该分类暂无音色';
+                voiceSelect.appendChild(option);
+            }
+        }
         
         // 语音合成函数
         function synthesizeSpeech() {
+            const category = document.getElementById('ttsCategory').value;
             const text = document.getElementById('ttsText').value;
             const voice = document.getElementById('ttsVoice').value;
             const audioPlayer = document.getElementById('audioPlayer');
             const ttsError = document.getElementById('ttsError');
             
+            // 验证输入
+            if (!text || !voice) {
+                ttsError.textContent = '请填写文本并选择音色';
+                ttsError.classList.remove('d-none');
+                return;
+            }
+            
             // 显示加载状态
             audioPlayer.src = '';
             ttsError.classList.add('d-none');
             
+            // 根据分类类型选择API路由
+            let apiUrl = '/fish/tts';  // 默认使用Fish API
+            const categoryType = voiceData[category] ? voiceData[category].type : 'custom';
+            
+            if (categoryType === '302') {
+                apiUrl = '/api302/tts';  // 302音色使用302 API
+            }
+            
             // 发送请求
-            fetch('/fish/tts', {
+            fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -465,7 +533,9 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('语音合成失败');
+                    return response.json().then(err => {
+                        throw new Error(err.error || '语音合成失败');
+                    });
                 }
                 return response.blob();
             })
