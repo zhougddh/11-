@@ -172,12 +172,279 @@ def login_post():
     return redirect(url_for('login'))
 
 # 管理后台
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    return 'Welcome to dashboard!'
+    response = None
+    curtabName = None
+    
+    # 处理POST请求
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        # 读取当前数据
+        data = read_json_file(JSON_FILE)
+        
+        if action == 'add_category':
+            # 添加分类
+            name = request.form.get('name')
+            token = request.form.get('token', 'no')
+            sort = request.form.get('sort', '0')
+            desc = request.form.get('desc', '')
+            url = request.form.get('url', '')
+            alias = request.form.get('alias', '')
+            type_ = request.form.get('type', 'custom')
+            
+            if name:
+                data[name] = {
+                    'token': token,
+                    'sort': sort,
+                    'desc': desc,
+                    'url': url,
+                    'alias': alias,
+                    'type': type_,
+                    'list': []
+                }
+                if save_json_file(JSON_FILE, data):
+                    response = f'分类 "{name}" 添加成功'
+                else:
+                    response = '添加分类失败'
+            else:
+                response = '分类名称不能为空'
+            curtabName = 'addCategory'
+        
+        elif action == 'edit_category':
+            # 修改分类
+            old_name = request.form.get('old_name')
+            new_name = request.form.get('new_name')
+            token = request.form.get('token')
+            sort = request.form.get('sort')
+            desc = request.form.get('desc')
+            url = request.form.get('url')
+            alias = request.form.get('alias')
+            type_ = request.form.get('type')
+            
+            if old_name and new_name:
+                if old_name in data:
+                    # 保存旧分类的数据
+                    category_data = data[old_name]
+                    # 更新数据
+                    if token:
+                        category_data['token'] = token
+                    if sort:
+                        category_data['sort'] = sort
+                    if desc:
+                        category_data['desc'] = desc
+                    if url:
+                        category_data['url'] = url
+                    if alias:
+                        category_data['alias'] = alias
+                    if type_:
+                        category_data['type'] = type_
+                    # 删除旧分类，添加新分类
+                    del data[old_name]
+                    data[new_name] = category_data
+                    if save_json_file(JSON_FILE, data):
+                        response = f'分类 "{old_name}" 修改为 "{new_name}" 成功'
+                    else:
+                        response = '修改分类失败'
+                else:
+                    response = f'分类 "{old_name}" 不存在'
+            else:
+                response = '原分类名称和新分类名称不能为空'
+            curtabName = 'editCategory'
+        
+        elif action == 'delete_category':
+            # 删除分类
+            name = request.form.get('name')
+            if name:
+                if name in data:
+                    del data[name]
+                    if save_json_file(JSON_FILE, data):
+                        response = f'分类 "{name}" 删除成功'
+                    else:
+                        response = '删除分类失败'
+                else:
+                    response = f'分类 "{name}" 不存在'
+            else:
+                response = '分类名称不能为空'
+            curtabName = 'deleteCategory'
+        
+        elif action == 'add_to_list':
+            # 添加音色
+            category_name = request.form.get('category_name')
+            name = request.form.get('name')
+            desc = request.form.get('desc', '')
+            vid = request.form.get('vid')
+            img = request.form.get('img', '')
+            
+            if category_name and name and vid:
+                if category_name in data:
+                    # 检查是否已存在同名音色
+                    existing = False
+                    for item in data[category_name]['list']:
+                        if item['name'] == name:
+                            existing = True
+                            break
+                    if not existing:
+                        data[category_name]['list'].append({
+                            'name': name,
+                            'desc': desc,
+                            'vid': vid,
+                            'img': img
+                        })
+                        if save_json_file(JSON_FILE, data):
+                            response = f'音色 "{name}" 添加到分类 "{category_name}" 成功'
+                        else:
+                            response = '添加音色失败'
+                    else:
+                        response = f'分类 "{category_name}" 中已存在名为 "{name}" 的音色'
+                else:
+                    response = f'分类 "{category_name}" 不存在'
+            else:
+                response = '分类名称、音色名称和VID不能为空'
+            curtabName = 'addToList'
+        
+        elif action == 'edit_list_item':
+            # 修改音色
+            category_name = request.form.get('category_name')
+            old_name = request.form.get('old_name')
+            new_name = request.form.get('new_name')
+            desc = request.form.get('desc')
+            vid = request.form.get('vid')
+            img = request.form.get('img')
+            
+            if category_name and old_name and new_name and vid:
+                if category_name in data:
+                    updated = False
+                    for item in data[category_name]['list']:
+                        if item['name'] == old_name:
+                            item['name'] = new_name
+                            if desc:
+                                item['desc'] = desc
+                            item['vid'] = vid
+                            if img:
+                                item['img'] = img
+                            updated = True
+                            break
+                    if updated:
+                        if save_json_file(JSON_FILE, data):
+                            response = f'音色 "{old_name}" 修改为 "{new_name}" 成功'
+                        else:
+                            response = '修改音色失败'
+                    else:
+                        response = f'分类 "{category_name}" 中不存在名为 "{old_name}" 的音色'
+                else:
+                    response = f'分类 "{category_name}" 不存在'
+            else:
+                response = '分类名称、原音色名称、新音色名称和VID不能为空'
+            curtabName = 'editListItem'
+        
+        elif action == 'delete_from_list':
+            # 删除音色
+            category_name = request.form.get('category_name')
+            name = request.form.get('name')
+            
+            if category_name and name:
+                if category_name in data:
+                    deleted = False
+                    for i, item in enumerate(data[category_name]['list']):
+                        if item['name'] == name:
+                            del data[category_name]['list'][i]
+                            deleted = True
+                            break
+                    if deleted:
+                        if save_json_file(JSON_FILE, data):
+                            response = f'音色 "{name}" 从分类 "{category_name}" 中删除成功'
+                        else:
+                            response = '删除音色失败'
+                    else:
+                        response = f'分类 "{category_name}" 中不存在名为 "{name}" 的音色'
+                else:
+                    response = f'分类 "{category_name}" 不存在'
+            else:
+                response = '分类名称和音色名称不能为空'
+            curtabName = 'deleteFromList'
+        
+        elif action == 'backup':
+            # 备份数据
+            try:
+                import shutil
+                backup_file = f'ys_backup_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+                shutil.copy2(JSON_FILE, backup_file)
+                response = f'备份成功，文件：{backup_file}'
+            except Exception as e:
+                response = f'备份失败：{str(e)}'
+            curtabName = 'backup'
+        
+        elif action == 'import':
+            # 导入数据
+            if 'import_file' in request.files:
+                import_file = request.files['import_file']
+                if import_file.filename.endswith('.json'):
+                    try:
+                        # 读取导入的文件
+                        import_data = json.load(import_file)
+                        # 保存到原文件
+                        if save_json_file(JSON_FILE, import_data):
+                            response = '导入成功'
+                        else:
+                            response = '导入失败'
+                    except Exception as e:
+                        response = f'导入失败：{str(e)}'
+                else:
+                    response = '请选择JSON文件'
+            else:
+                response = '请选择文件'
+            curtabName = 'import'
+        
+        elif action == 'export':
+            # 导出数据
+            try:
+                import io
+                from flask import send_file
+                # 读取数据
+                data = read_json_file(JSON_FILE)
+                # 转换为JSON字符串
+                json_data = json.dumps(data, ensure_ascii=False, indent=4)
+                # 创建内存文件
+                memory_file = io.BytesIO(json_data.encode('utf-8'))
+                memory_file.seek(0)
+                # 发送文件
+                return send_file(
+                    memory_file,
+                    mimetype='application/json',
+                    as_attachment=True,
+                    download_name=f'ys_export_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+                )
+            except Exception as e:
+                response = f'导出失败：{str(e)}'
+            curtabName = 'export'
+    
+    # 读取数据用于显示
+    data = read_json_file(JSON_FILE)
+    ysCount = len(data)
+    first_category_name = None
+    first_category_audio_colors = []
+    
+    if data:
+        # 获取第一个分类
+        first_category_name = list(data.keys())[0]
+        if 'list' in data[first_category_name]:
+            first_category_audio_colors = data[first_category_name]['list']
+    
+    # 渲染模板
+    return render_template('index.html', 
+                         titleName=PKC_TITLE, 
+                         PKC_VERSION=PKC_VERSION, 
+                         PKC_MY=PKC_MY, 
+                         ysCount=ysCount, 
+                         first_category_name=first_category_name, 
+                         first_category_audio_colors=first_category_audio_colors, 
+                         response=response, 
+                         curtabName=curtabName)
 
 # 退出登录
 @app.route('/logout')
