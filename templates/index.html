@@ -140,8 +140,28 @@
                         <h3>仪表盘</h3>
                         <p>当前共有 {{ ysCount }} 个分类</p>
                         
-                        {% if first_category_name %}
-                            <h4>{{ first_category_name }}</h4>
+                        <!-- 分类选择 -->
+                        <form method="POST" action="/dashboard" class="mb-4">
+                            <input type="hidden" name="action" value="select_category">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="category">选择分类</label>
+                                        <select class="form-control" id="category" name="category" required>
+                                            {% for category_name in categories %}
+                                                <option value="{{ category_name }}" {% if selected_category == category_name %}selected{% endif %}>{{ category_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 align-self-end">
+                                    <button type="submit" class="btn btn-primary btn-block">查看音色</button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        {% if selected_category %}
+                            <h4>{{ selected_category }}</h4>
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -152,7 +172,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for item in first_category_audio_colors %}
+                                    {% for item in selected_category_voices %}
                                         <tr>
                                             <td>{{ item.name }}</td>
                                             <td>{{ item.desc }}</td>

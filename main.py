@@ -179,6 +179,8 @@ def dashboard():
     
     response = None
     curtabName = None
+    selected_category = None
+    selected_category_voices = []
     
     # 处理POST请求
     if request.method == 'POST':
@@ -187,7 +189,13 @@ def dashboard():
         # 读取当前数据
         data = read_json_file(JSON_FILE)
         
-        if action == 'add_category':
+        if action == 'select_category':
+            # 选择分类
+            selected_category = request.form.get('category')
+            if selected_category and selected_category in data and 'list' in data[selected_category]:
+                selected_category_voices = data[selected_category]['list']
+        
+        elif action == 'add_category':
             # 添加分类
             name = request.form.get('name')
             token = request.form.get('token', 'no')
@@ -426,14 +434,13 @@ def dashboard():
     # 读取数据用于显示
     data = read_json_file(JSON_FILE)
     ysCount = len(data)
-    first_category_name = None
-    first_category_audio_colors = []
+    categories = list(data.keys())
     
-    if data:
-        # 获取第一个分类
-        first_category_name = list(data.keys())[0]
-        if 'list' in data[first_category_name]:
-            first_category_audio_colors = data[first_category_name]['list']
+    # 如果没有选择分类，默认选择第一个
+    if not selected_category and categories:
+        selected_category = categories[0]
+        if 'list' in data[selected_category]:
+            selected_category_voices = data[selected_category]['list']
     
     # 渲染模板
     return render_template('index.html', 
@@ -441,8 +448,9 @@ def dashboard():
                          PKC_VERSION=PKC_VERSION, 
                          PKC_MY=PKC_MY, 
                          ysCount=ysCount, 
-                         first_category_name=first_category_name, 
-                         first_category_audio_colors=first_category_audio_colors, 
+                         categories=categories, 
+                         selected_category=selected_category, 
+                         selected_category_voices=selected_category_voices, 
                          response=response, 
                          curtabName=curtabName)
 
