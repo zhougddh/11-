@@ -1,4 +1,26 @@
 {
+    "302音色": {
+        "token": "yes",
+        "sort": "5",
+        "desc": "基于302.AI的Fish Audio语音合成",
+        "url": "",
+        "alias": "",
+        "type": "302",
+        "list": [
+            {
+                "name": "Voz Femenina Animada",
+                "desc": "Una voz femenina enérgica y animada, ideal para transmitir entusiasmo y celebración en cualquier proyecto.",
+                "img": "",
+                "vid": "c1e0da07c05e416cb8271aae8d956797"
+            },
+            {
+                "name": "TestI",
+                "desc": "I",
+                "img": "",
+                "vid": "42d0c168ada8453fa50d6d6c7f81ce45"
+            }
+        ]
+    },
     "讯飞音色": {
         "token": "no",
         "sort": "5",
