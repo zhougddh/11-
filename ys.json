@@ -1,6 +1,6 @@
 {
     "302音色": {
-        "token": "yes",
+        "token": "auth",
         "sort": "5",
         "desc": "基于302.AI的Fish Audio语音合成",
         "url": "",
